@@ -7,6 +7,7 @@ from news_api import NewsFetcher
 from llm_providers import OpenAIProvider, CohereProvider
 from budget_manager import TokenBudgetManager
 from config import CONFIG
+from database import NewsDatabase
 
 class NewsSummarizer:
     def __init__(self):
@@ -14,6 +15,7 @@ class NewsSummarizer:
         self.fetcher = NewsFetcher()
         self.summarizer = OpenAIProvider(self.budget_manager)
         self.analyzer = CohereProvider(self.budget_manager)
+        self.db = NewsDatabase()
 
     # Run the current pipeline synchronously.
     def process_news(self, limit=3):
@@ -24,8 +26,17 @@ class NewsSummarizer:
         for idx, article in enumerate(articles, 1):
             title = article.get('title')
             content = article.get('description') or title
+            url = article.get("url")
             print(f"\nProcessing [{idx}/{len(articles)}]: {title}")
             
+            # 1. READ FROM DB: Check cache BEFORE calling APIs
+            cached_result = self.db.get_cached_article(url)
+            if cached_result:
+                print(f"[Cache Hit] Skipping API call for: {title}")
+                results.append(cached_result)
+                continue
+
+            # 2. API CALLS: Only run if NOT in cache
             try:
                 summary = self.summarizer.summarize(content)
                 sentiment = self.analyzer.analyze_sentiment(summary)
@@ -33,12 +44,16 @@ class NewsSummarizer:
                 print(f"Budget or Processing Error: {e}")
                 break
             
-            results.append({
+            article_data = {
                 "title": title,
                 "summary": summary,
                 "sentiment": sentiment,
-                "url": article.get("url")
-            })
+                "url": url
+            }
+
+            # 3. SAVE TO DB: Save fresh results to database
+            self.db.save_article(article_data)
+            results.append(article_data)
             
         return results
 
@@ -52,8 +67,6 @@ class AsyncNewsSummarizer(NewsSummarizer):
         if not text:
             return 0.0
 
-        # Rough input-token estimate for the summary prompt, plus a conservative
-        # allowance for the 150-token OpenAI completion and the follow-up sentiment call.
         estimated_openai_input_tokens = len(text.split()) + 20
         estimated_openai_output_tokens = 150
         estimated_cohere_input_tokens = len(text.split()) + 40
@@ -148,7 +161,14 @@ class AsyncNewsSummarizer(NewsSummarizer):
     async def _process_single_article(self, session: aiohttp.ClientSession, article: dict, idx: int, total: int):
         title = article.get('title')
         content = article.get('description') or title
+        url = article.get("url")
         print(f"\n[Async Worker] Processing [{idx}/{total}]: {title}")
+
+        # 1. READ FROM DB: Check cache inside async worker
+        cached_result = self.db.get_cached_article(url)
+        if cached_result:
+            print(f"[Cache Hit] Returning cached article [{idx}/{total}]: {title}")
+            return cached_result
         
         try:
             summary = await self._summarize_openai(session, content)
@@ -157,12 +177,16 @@ class AsyncNewsSummarizer(NewsSummarizer):
             print(f"Error processing article {idx} via aiohttp: {e}")
             return None
         
-        return {
+        result = {
             "title": title,
             "summary": summary,
             "sentiment": sentiment,
-            "url": article.get("url")
+            "url": url
         }
+
+        # 2. SAVE TO DB: Save fresh async processing result to DB
+        self.db.save_article(result)
+        return result
 
     # Fetch headlines, reserve budget, and fan out accepted articles concurrently.
     async def process_news_async(self, limit=3):
@@ -182,6 +206,13 @@ class AsyncNewsSummarizer(NewsSummarizer):
             tasks = []
             reserved_budget = 0.0
             for idx, article in enumerate(articles, 1):
+                url = article.get("url")
+
+                # SKIP BUDGET RESERVATION IF ALREADY CACHED
+                if self.db.get_cached_article(url):
+                    tasks.append(self._process_single_article(session, article, idx, len(articles)))
+                    continue
+
                 title = article.get("title")
                 content = article.get("description") or title or ""
                 estimated_cost = self._estimate_article_cost(content)
