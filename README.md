@@ -10,6 +10,7 @@ This system fetches current technology headlines, summarizes them using OpenAI, 
 * **Multi-Model Intelligence:** Summarizes each article using OpenAI (`gpt-4o-mini`) and analyzes sentiment using Cohere (`command-r-08-2024`).
 * **Resilient Fallbacks:** Falls back gracefully if an external API provider fails, ensuring continuous execution without crashing.
 * **Active Cost Tracking:** Tracks and reports precise API costs per run based on exact token usage with active daily budget guardrails.
+* **Local Caching & Resilient Storage:** Caches processed articles in SQLite to eliminate double-billing, with automatic fallback to system temporary directories in read-only environments.
 
 ## Key Features
 
