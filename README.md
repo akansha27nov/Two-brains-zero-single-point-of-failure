@@ -56,6 +56,7 @@ pytest test_summarizer.py -v
 ```
 ## Example Output
 
+```bash
 ============================================================
       MULTI-PROVIDER NEWS SUMMARIZER & SENTIMENT ANALYZER   
 ============================================================
@@ -109,6 +110,7 @@ Provider Breakdown:
     Output tokens: 6.0
     Total cost:    $0.00000
 ============================================================
+```
 
 ## Cost Analysis
 The system enforces strict financial guardrails via the `TokenBudgetManager`:
