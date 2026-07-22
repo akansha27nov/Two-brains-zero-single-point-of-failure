@@ -125,6 +125,7 @@ The system enforces strict financial guardrails via the `TokenBudgetManager`:
 ## Optional Stretches implemented
 
 1. Add response caching to avoid re-processing identical articles
+2. Store processed articles in SQLite database
 
 ```
 ============================================================
