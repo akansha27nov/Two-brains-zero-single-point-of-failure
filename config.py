@@ -1,3 +1,6 @@
+# Central configuration loader for API keys and runtime limits.
+# Reads environment variables once at import time.
+# Provides a small validation helper for required keys.
 import os
 import sys
 from dotenv import load_dotenv
@@ -14,6 +17,7 @@ CONFIG = {
     "DAILY_BUDGET": float(os.getenv("DAILY_BUDGET", "5.00"))
 }
 
+# Validate that required API keys are present before running the app.
 def validate_config():
     missing_keys = [k for k, v in CONFIG.items() if not v and "KEY" in k]
     if missing_keys:

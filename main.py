@@ -1,6 +1,13 @@
+"""
+CLI entry point for the news summarizer. Prompts for how many articles to process.
+Prints the final report and budget summary
+Author: Akansha Verma
+"""
+
 import sys
 from summarizer import NewsSummarizer
 
+# Run the synchronous pipeline from the command line.
 def run_app():
     print("=" * 60)
     print("      MULTI-PROVIDER NEWS SUMMARIZER & SENTIMENT ANALYZER   ")

@@ -1,8 +1,12 @@
+# Token budget tracking for provider calls.
+# Calculates spend from token usage and daily limits.
+# Used by both sync and async execution paths.
 from typing import Dict, Any
 
 class TokenBudgetManager:
     """Manage token budgets using direct API usage data."""
     
+    # Initialize the budget state and provider pricing tables.
     def __init__(self, daily_budget: float = 5.00):
         self.daily_budget = daily_budget
         self.used_budget = 0.0
@@ -20,6 +24,7 @@ class TokenBudgetManager:
             }
         }
     
+    # Convert token counts into a dollar estimate for one request.
     def calculate_cost(self, provider: str, model: str, input_tokens: int, output_tokens: int) -> float:
         if provider not in self.pricing or model not in self.pricing[provider]:
             return 0.0
@@ -29,6 +34,7 @@ class TokenBudgetManager:
         output_cost = output_tokens * pricing["output"]
         return input_cost + output_cost
     
+    # Record a request and reject it if the daily limit would be exceeded.
     def track_request(self, provider: str, model: str, input_tokens: int, output_tokens: int) -> Dict[str, Any]:
         cost = self.calculate_cost(provider, model, input_tokens, output_tokens)
         
@@ -44,6 +50,7 @@ class TokenBudgetManager:
         
         return {"cost": cost, "remaining_budget": self.daily_budget - self.used_budget}
     
+    # Print a terminal summary of usage by provider.
     def print_summary(self):
         print("\n" + "=" * 60)
         print("TOKEN BUDGET SUMMARY")

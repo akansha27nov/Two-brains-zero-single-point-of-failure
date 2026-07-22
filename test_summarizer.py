@@ -1,3 +1,6 @@
+# Pytest coverage for the summarizer pipeline and helpers.
+# Mocks external APIs so tests stay deterministic.
+# Verifies fallbacks, budget tracking, and pipeline behavior.
 import pytest
 from unittest.mock import MagicMock, patch
 
@@ -8,6 +11,7 @@ from budget_manager import TokenBudgetManager
 from config import CONFIG
 
 
+# Provide sample article payloads for pipeline tests.
 @pytest.fixture
 def sample_articles():
     """Sample article data mimicking NewsFetcher output."""
@@ -28,6 +32,7 @@ def sample_articles():
 class TestNewsSummarizerPipeline:
     """Tests for the main orchestrator."""
 
+    # Verify the sync pipeline runs end to end with mocked providers.
     @patch.object(NewsFetcher, "fetch_top_tech_news")
     @patch.object(OpenAIProvider, "summarize")
     @patch.object(CohereProvider, "analyze_sentiment")
@@ -44,6 +49,7 @@ class TestNewsSummarizerPipeline:
         assert results[0]["summary"] == "A concise summary."
         assert results[0]["sentiment"] == "Positive"
 
+    # Verify the sync pipeline returns cleanly for empty input.
     @patch.object(NewsFetcher, "fetch_top_tech_news")
     def test_empty_articles_list(self, mock_fetch):
         mock_fetch.return_value = []
@@ -57,6 +63,7 @@ class TestNewsSummarizerPipeline:
 class TestLLMProvidersFallback:
     """Tests verifying fallback strings when APIs fail."""
 
+    # Force OpenAI to fail and confirm the fallback text is returned.
     @patch("llm_providers.OpenAI")
     def test_openai_fallback_on_exception(self, mock_openai_class):
         mock_client = MagicMock()
@@ -68,6 +75,7 @@ class TestLLMProvidersFallback:
 
         assert "Fallback activated" in result
 
+    # Force Cohere to fail and confirm the fallback text is returned.
     @patch("llm_providers.cohere.Client")
     def test_cohere_fallback_on_exception(self, mock_cohere_class):
         mock_client = MagicMock()
@@ -83,6 +91,7 @@ class TestLLMProvidersFallback:
 class TestTokenBudgetManager:
     """Tests for budget tracking and enforcement."""
 
+    # Confirm usage is accumulated for a normal request.
     def test_budget_tracking_accumulates(self):
         budget = TokenBudgetManager(daily_budget=5.00)
         
@@ -92,6 +101,7 @@ class TestTokenBudgetManager:
         assert budget.used_budget > 0
         assert budget.provider_usage["openai"]["input_tokens"] == 10000
 
+    # Confirm the budget manager blocks requests that exceed the limit.
     def test_budget_exceeded_raises_exception(self):
         budget = TokenBudgetManager(daily_budget=0.0001)  # Ultra small budget
 

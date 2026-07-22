@@ -1,14 +1,19 @@
+# Provider wrappers for OpenAI and Cohere.
+# Centralizes API calls, prompt formatting, and budget tracking.
+# Keeps fallback behavior in one place.
 from config import CONFIG
 from openai import OpenAI
 import cohere
 from budget_manager import TokenBudgetManager
 
 class OpenAIProvider:
+    # Set up the OpenAI client and shared budget manager.
     def __init__(self, budget_manager: TokenBudgetManager = None):
         self.client = OpenAI(api_key=CONFIG["OPENAI_API_KEY"])
         self.model = "gpt-4o-mini"
         self.budget_manager = budget_manager
 
+    # Generate a short summary from article text.
     def summarize(self, text):
         if not text:
             return "No content to summarize."
@@ -34,11 +39,13 @@ class OpenAIProvider:
             return "Summarization failed (Fallback activated)."
 
 class CohereProvider:
+    # Set up the Cohere client and shared budget manager.
     def __init__(self, budget_manager: TokenBudgetManager = None):
         self.client = cohere.Client(api_key=CONFIG["COHERE_API_KEY"])
         self.model = "command-r-08-2024"
         self.budget_manager = budget_manager
 
+    # Classify text sentiment with Cohere.
     def analyze_sentiment(self, text):
         if not text:
             return "Neutral"

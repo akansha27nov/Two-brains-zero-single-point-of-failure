@@ -1,3 +1,6 @@
+# Core orchestration for news summarization and sentiment analysis.
+# Provides sync and async pipelines for the same workflow.
+# Uses shared budget tracking across providers.
 import aiohttp
 import asyncio
 from news_api import NewsFetcher
@@ -12,6 +15,7 @@ class NewsSummarizer:
         self.summarizer = OpenAIProvider(self.budget_manager)
         self.analyzer = CohereProvider(self.budget_manager)
 
+    # Run the current pipeline synchronously.
     def process_news(self, limit=3):
         print(f"Fetching up to {limit} articles (Sync)...")
         articles = self.fetcher.fetch_top_tech_news(limit=limit)
@@ -42,6 +46,7 @@ class NewsSummarizer:
 class AsyncNewsSummarizer(NewsSummarizer):
     """Advanced asynchronous summarizer"""
 
+    # Estimate the cost of processing one article before scheduling it.
     def _estimate_article_cost(self, text: str) -> float:
         """Conservatively estimate the OpenAI + Cohere cost for one article."""
         if not text:
@@ -67,6 +72,7 @@ class AsyncNewsSummarizer(NewsSummarizer):
         )
         return openai_cost + cohere_cost
 
+    # Fetch headlines with aiohttp instead of the sync requests client.
     async def _fetch_news(self, session: aiohttp.ClientSession, limit: int):
         url = "https://newsapi.org/v2/top-headlines"
         params = {
@@ -80,6 +86,7 @@ class AsyncNewsSummarizer(NewsSummarizer):
             data = await resp.json()
             return data.get("articles", [])
 
+    # Summarize one article through the OpenAI HTTP endpoint.
     async def _summarize_openai(self, session: aiohttp.ClientSession, text: str):
         if not text:
             return "No content."
@@ -109,6 +116,7 @@ class AsyncNewsSummarizer(NewsSummarizer):
             )
             return summary
 
+    # Classify the summary sentiment through the Cohere HTTP endpoint.
     async def _analyze_cohere(self, session: aiohttp.ClientSession, text: str):
         if not text:
             return "Neutral"
@@ -136,6 +144,7 @@ class AsyncNewsSummarizer(NewsSummarizer):
             )
             return sentiment
 
+    # Process a single article end to end.
     async def _process_single_article(self, session: aiohttp.ClientSession, article: dict, idx: int, total: int):
         title = article.get('title')
         content = article.get('description') or title
@@ -155,6 +164,7 @@ class AsyncNewsSummarizer(NewsSummarizer):
             "url": article.get("url")
         }
 
+    # Fetch headlines, reserve budget, and fan out accepted articles concurrently.
     async def process_news_async(self, limit=3):
         print(f"Fetching up to {limit} articles asynchronously using pure aiohttp...")
         
