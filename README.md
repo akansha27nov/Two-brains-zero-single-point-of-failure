@@ -121,3 +121,57 @@ The system enforces strict financial guardrails via the `TokenBudgetManager`:
 
 - **Active Guardrails:** If projected or cumulative spend exceeds the configured DAILY_BUDGET, the application blocks execution to prevent runaway cloud bills.
 
+## Optional Stretches implemented
+
+1. Add response caching to avoid re-processing identical articles
+
+```
+============================================================
+      MULTI-PROVIDER NEWS SUMMARIZER & SENTIMENT ANALYZER   
+============================================================
+How many articles would you like to process? (Default 3): 
+
+[+] Initializing pipeline...
+Fetching up to 3 articles (Sync)...
+
+Processing [1/3]: The New Mercedes-Maybach GLS Debuts With More Power, Better Style - Motor1.com
+[Cache Hit] Skipping API call for: The New Mercedes-Maybach GLS Debuts With More Power, Better Style - Motor1.com
+
+Processing [2/3]: iOS 27 beta 4 adds a useful Apple TV app feature, here’s how it works - 9to5Mac
+[Cache Hit] Skipping API call for: iOS 27 beta 4 adds a useful Apple TV app feature, here’s how it works - 9to5Mac
+
+Processing [3/3]: A $33,700 Tiny Home That Finally Gets the Floor Plan Right - Yanko Design
+[Cache Hit] Skipping API call for: A $33,700 Tiny Home That Finally Gets the Floor Plan Right - Yanko Design
+
+============================================================
+                   SUMMARY & ANALYSIS REPORT                
+============================================================
+
+[1] The New Mercedes-Maybach GLS Debuts With More Power, Better Style - Motor1.com
+    URL:       https://www.motor1.com/news/802238/2027-mercedes-maybach-gls-680-engine-specs-details/
+    Summary:   Mercedes-Benz has introduced the 2027 Maybach GLS 680, featuring a more powerful twin-turbocharged V8 engine and a refreshed design. The updates enhance both performance and aesthetics for this luxury SUV.
+    Sentiment: Positive.
+------------------------------------------------------------
+
+[2] iOS 27 beta 4 adds a useful Apple TV app feature, here’s how it works - 9to5Mac
+    URL:       https://9to5mac.com/2026/07/20/ios-27-beta-4-adds-a-useful-apple-tv-app-feature-heres-how-it-works/
+    Summary:   Apple has released iOS 27 beta 4, introducing a new "Automatic Downloads" feature that enhances user experience. This update aims to streamline the process of app and content downloads on Apple devices.
+    Sentiment: Positive.
+------------------------------------------------------------
+
+[3] A $33,700 Tiny Home That Finally Gets the Floor Plan Right - Yanko Design
+    URL:       https://www.yankodesign.com/2026/07/20/a-33700-tiny-home-that-finally-gets-the-floor-plan-right/
+    Summary:   The tiny home movement continues to thrive and surprise, as evidenced by innovative projects like the Fairfax 20. Each new development challenges the notion that the trend has peaked, highlighting its ongoing evolution and appeal.
+    Sentiment: Positive.
+------------------------------------------------------------
+
+============================================================
+TOKEN BUDGET SUMMARY
+============================================================
+Daily Budget: $5.00
+Used: $0.00000 (0.00%)
+Remaining: $5.00000
+
+Provider Breakdown:
+============================================================
+```
